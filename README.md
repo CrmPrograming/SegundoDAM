@@ -4,7 +4,7 @@ Se divide en las siguientes secciones:
 
 * **Trimestre Primero**
    * AED
-      * [Recordatorio SQL](https://github.com/CrmPrograming/SegundoDAM/tree/master/TrimestrePrimero/AED/Recordatorio SQL) -- Ejercicios de repaso de SQL
+      * [Recordatorio SQL](https://github.com/CrmPrograming/SegundoDAM/tree/master/AED/Recordatorio%20SQL) -- Ejercicios de repaso de SQL
       
 
 Se irán actualizando las distintas secciones conforme transcurra el curso.
