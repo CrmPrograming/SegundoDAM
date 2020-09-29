@@ -14,7 +14,7 @@ IF DB_ID('bdFutbol') IS NOT NULL
 	END
 GO
 
-CREATE DATABASE bdFutbol
+CREATE DATABASE bdFutbol1
 GO
 
 USE bdFutbol
