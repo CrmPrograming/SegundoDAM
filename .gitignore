@@ -1,5 +1,7 @@
-\WorkspaceEclipse\
-\ProyectoAPP\
+!WorkspaceEclipse/
+WorkspaceEclipse/*
+!ProyectoAPP/
+ProyectoAPP/*
 *~
 *.autosave
 *#
