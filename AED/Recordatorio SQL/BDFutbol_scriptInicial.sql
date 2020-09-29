@@ -320,7 +320,7 @@ GO
 -- 7. Hacer una función que nos devuelva por cada futbolista su nombre y en cuantos equipos a tenido contrato entre
 -- dos fechas determinadas.
 
-ALTER FUNCTION fnContratosFutbolistas(@fechaInicial DATE, @fechaFinal DATE)
+CREATE FUNCTION fnContratosFutbolistas(@fechaInicial DATE, @fechaFinal DATE)
 RETURNS @resultados TABLE (nombre VARCHAR(50), totalEquipos INT)
 AS
 	BEGIN

@@ -234,3 +234,63 @@ CALL equiposLiga('Liga Falsa');
 
 -- Liga existente
 CALL equiposLiga('Primera división masculina');
+
+
+-- 6. Hacer una función en la que visualicemos los datos de los jugadores extranjeros que pertenezcan a un equipo cuyo
+-- nombre pasamos por parámetro.
+
+DELIMITER //
+CREATE PROCEDURE jugadoresExtranjeros(pEquipo VARCHAR(40))
+BEGIN
+
+	SELECT *
+    FROM fubtbolistas
+	WHERE nacionalidad <> 'España' AND coddnionie IN (SELECT coddnionie 
+													  FROM contratos 
+													  WHERE codEquipo = (SELECT codEquipo
+								   										 FROM equipos
+								   										 WHERE nomEquipo = pEquipo));
+END;
+//
+DELIMITER ;
+
+CALL jugadoresExtranjeros('Real Madrid Club de Fútbol');
+
+
+
+-- 7. Hacer una función que nos devuelva por cada futbolista su nombre y en cuantos equipos a tenido contrato entre
+-- dos fechas determinadas.
+
+DELIMITER //
+CREATE PROCEDURE contratosFutbolistas(pFechaInicial DATE, pFechaFinal DATE)
+BEGIN
+	SELECT nombre, COUNT(DISTINCT contratos.codEquipo) AS `Total`
+	FROM fubtbolistas
+		INNER JOIN contratos ON fubtbolistas.coddnionie = contratos.coddnionie
+	WHERE fechaInicio >= pFechaInicial AND fechaFin <= pFechaFinal
+	GROUP BY nombre;
+	
+END;
+//
+DELIMITER ;
+
+CALL contratosFutbolistas('2000/01/01', '2030/12/20');
+
+
+-- 8. Hacer una función escalar que nos devuelva el precioanual mas alto que se le ha pagado a un futbolista,
+-- con el nombre de equipo y año pasado por parámetro.
+
+
+DELIMITER //
+CREATE FUNCTION fnMejorPrecioAnual(pEquipo VARCHAR(40), pFecha INT)
+RETURNS INT
+BEGIN
+	RETURN (SELECT MAX(precioanual)
+			FROM contratos
+			WHERE YEAR(fechaInicio) = pFecha OR YEAR(fechaFin) = pFecha 
+				AND codEquipo =	(SELECT codEquipo FROM equipos WHERE nomEquipo = pEquipo));
+END;
+//
+DELIMITER ;
+
+SELECT fnMejorPrecioAnual('Fútbol Club Barcelona', 2020);
