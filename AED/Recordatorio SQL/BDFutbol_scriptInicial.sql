@@ -237,7 +237,7 @@ GO
 DECLARE @activos INT
 DECLARE @activosPrecio INT
 
---Prueba para equipo no existente
+-- Prueba para equipo no existente
 
 EXEC futbolistasActivos 77, 10000, 10000, @activos OUTPUT, @activosPrecio OUTPUT
 SELECT @activos 'Total de jugadores activos en el equipo', @activosPrecio 'Total de jugadores activos con criterio dado'
@@ -257,8 +257,7 @@ AS
 	BEGIN
 		RETURN (SELECT SUM(DATEDIFF(MONTH, fechaInicio, fechaFin))
 				FROM contratos 
-				WHERE coddnionie = @dni
-				GROUP BY coddnionie)
+				WHERE coddnionie = @dni);
 	END
 GO
 

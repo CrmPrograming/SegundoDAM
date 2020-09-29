@@ -81,3 +81,156 @@ INSERT INTO contratos (coddnionie, codEquipo, fechaInicio, fechaFin, precioanual
 							 ('23456789J', 4, '2010/07/26', '2020/09/22', 193000, 6652100),
 							 ('23456789O', 10, '2010/07/26', '2020/09/22', 185000, 7652100),
 							 ('23456789O', 10, '2020/09/22', '2023/11/26', 185000, 7775600);
+
+
+-- ###################################
+
+--		     PROCEDIMIENTOS
+
+-- ###################################
+
+-- 1. Crear un procedimiento almacenado que liste todos los contratos de cierto futbolista pasando
+-- por parámetro de entrada el dni o nie del futbolista, ordenados por fecha de inicio. Los datos
+-- a visualizar serán: Código de contrato, nombre de equipo, nombre de liga, fecha de inicio,
+-- fecha de fin, precio anual y precio de recisión del contrato.
+
+
+DELIMITER //
+
+CREATE PROCEDURE listarContratoFutbolista(IN codigoFutbolista CHAR(9))
+BEGIN
+	IF (SELECT COUNT(*) FROM contratos WHERE coddnionie = codigoFutbolista) = 0 THEN
+		SELECT "No existe contratos para el jugador con el dni dado";
+	ELSE
+    	SELECT codContrato, nomEquipo, nomLiga, fechaInicio, fechaFin, precioanual, preciorecision
+        FROM contratos INNER JOIN equipos ON contratos.codEquipo = equipos.codEquipo
+        	INNER JOIN ligas ON equipos.codLiga = ligas.codLiga
+        WHERE coddnionie = codigoFutbolista
+        ORDER BY fechaInicio;
+    END IF;
+END;
+//
+DELIMITER ;
+
+SET @dnijugador = '45678901D';
+
+-- Prueba con un jugador con contrato
+CALL listarContratoFutbolista(@dnijugador);
+
+-- Prueba con un jugador sin contrato
+CALL listarContratoFutbolista('77777777Z');
+
+
+-- 2. Crear un procedimiento almacenado que inserte un equipo, de modo que se le pase como parámetros
+-- todos los datos. Comprobar que el código de liga pasado exista en la tabla ligas. En caso de que no
+-- exista la liga que no se inserte.
+-- Devolver en un parámetro de salida: 0 si la liga no existe y 1 si la liga existe.
+-- Devolver en otro parámetro de salida: 0 si el equipo no se insertó y 1 si la inserción fue correcta.
+
+DELIMITER //
+CREATE PROCEDURE insertarEquipo(pNombre VARCHAR(40), pLiga CHAR(5), pLocalidad VARCHAR(60), pInternacional BIT, OUT oEstadoLiga BIT, OUT oEstadoInsercion BIT)
+BEGIN
+	SET oEstadoLiga = 0;
+	SET oEstadoInsercion = 0;
+
+	IF (SELECT COUNT(*) FROM ligas WHERE codLiga = pLiga) = 1 THEN
+		SET oEstadoLiga = 1;
+		-- Comprobamos si el equipo a insertar ya existe antes de almacenarlo
+		IF (SELECT COUNT(*) FROM equipos WHERE nomEquipo = pNombre AND codLiga = pLiga AND localidad = pLocalidad AND internacional = pInternacional) = 0 THEN
+			SET oEstadoInsercion = 1;
+			INSERT equipos VALUES (NULL, pNombre, pLiga, pLocalidad, pInternacional);
+		END IF;
+	END IF;
+END;
+//
+DELIMITER ;
+
+-- Insertando un equipo nuevo
+CALL insertarEquipo('Nuevo equipo 1', 'SEGDM', 'Localidad de prueba', 1, @EExiste, @iRealizado);
+SELECT @eExiste AS `Existe Liga`, @iRealizado AS `Insert realizado`;
+
+-- Insertando un equipo en una liga que no existe
+CALL insertarEquipo('Nuevo equipo 1', 'FALSA', 'Localidad de prueba', 1, @eExiste, @iRealizado);
+SELECT @eExiste AS `Existe Liga`, @iRealizado AS `Insert realizado`;
+
+-- Insertando un equipo que ya existe
+CALL insertarEquipo('Nuevo equipo 1', 'SEGDM', 'Localidad de prueba', 1, @eExiste, @iRealizado);
+SELECT @eExiste AS `Existe Liga`, @iRealizado AS `Insert realizado`;
+
+
+-- 3. Crear un procedimiento almacenado que indicándole un equipo, precio anual y un precio recisión, devuelva
+-- dos parámetros. En un parámetro de salida la cantidad de futbolistas en activo (con contrato vigente) que hay
+-- en dicho equipo. En otro parámetro de salida la cantidad de futbolistas en activo de dicho equipo con precio
+-- anual y de recisión menor de los indicados.
+
+DELIMITER //
+
+CREATE PROCEDURE futbolistasActivos(pEquipo INT, pPrecio INT, pRecis INT, OUT oActivosEquipo INT, OUT oActivosPrecioAnual INT)
+BEGIN
+	IF (SELECT COUNT(*) FROM equipos WHERE codEquipo = pEquipo) = 0 THEN
+		SET oActivosEquipo = -1;
+		SET oActivosPrecioAnual = -1;
+		SELECT "No existe el equipo indicado";
+	ELSE
+		SELECT COUNT(*) INTO oActivosEquipo
+		FROM contratos
+		WHERE codEquipo = pEquipo AND fechaFin > NOW();
+
+		SELECT COUNT(*) INTO oActivosPrecioAnual
+		FROM contratos
+		WHERE codEquipo = pEquipo AND fechaFin > NOW() AND precioanual < pPrecio AND preciorecision < pRecis;
+	END IF;
+END;
+//
+DELIMITER ;
+
+-- Prueba para equipo no existente
+
+CALL futbolistasActivos(77, 10000, 10000, @activos, @activosPrecio);
+SELECT @activos AS `Total de jugadores activos en el equipo`, @activosPrecio `Total de jugadores activos con criterio dado`;
+
+-- Prueba para equipo existente
+
+CALL futbolistasActivos(7, 8230000, 9000000, @activos, @activosPrecio);
+SELECT @activos AS `Total de jugadores activos en el equipo`, @activosPrecio AS `Total de jugadores activos con criterio dado`;
+
+
+-- 4. Crear una función que dándole un dni o nie de un futbolista nos devuelva en número de meses total que ha estado en equipos.
+
+DELIMITER //
+
+CREATE FUNCTION fnTotalMeses(pDni CHAR(9))
+RETURNS INT
+BEGIN
+	RETURN (SELECT SUM(TIMESTAMPDIFF(MONTH, fechaInicio, fechaFin))
+			FROM contratos 
+			WHERE coddnionie = pDni);
+END;
+//
+DELIMITER ;
+
+SELECT fnTotalMeses('23456789O') AS `Total meses`;
+
+
+-- 5. Hacer una función que devuelva los nombres de los equipos que pertenecen a una determinada liga que le pasamos el nombre
+-- por parámetro de entrada, si la liga no existe deberá aparecer liga no existe.
+
+DELIMITER //
+CREATE PROCEDURE equiposLiga(pLiga VARCHAR(50))
+BEGIN
+	IF (SELECT COUNT(*) FROM ligas WHERE nomLiga = pLiga) = 0 THEN
+		SELECT 'Liga no existe';
+	ELSE
+		SELECT nomEquipo 
+		FROM equipos
+		WHERE codLiga = (SELECT codLiga FROM ligas WHERE nomLiga = pLiga);
+	END IF;
+END;
+//
+DELIMITER ;
+
+-- Liga no existente
+CALL equiposLiga('Liga Falsa');
+
+-- Liga existente
+CALL equiposLiga('Primera división masculina');
