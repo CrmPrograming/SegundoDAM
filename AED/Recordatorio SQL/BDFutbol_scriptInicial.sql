@@ -14,7 +14,7 @@ IF DB_ID('bdFutbol') IS NOT NULL
 	END
 GO
 
-CREATE DATABASE bdFutbol
+CREATE DATABASE bdFutbol1
 GO
 
 USE bdFutbol
@@ -237,7 +237,7 @@ GO
 DECLARE @activos INT
 DECLARE @activosPrecio INT
 
--- Prueba para equipo no existente
+--Prueba para equipo no existente
 
 EXEC futbolistasActivos 77, 10000, 10000, @activos OUTPUT, @activosPrecio OUTPUT
 SELECT @activos 'Total de jugadores activos en el equipo', @activosPrecio 'Total de jugadores activos con criterio dado'
@@ -257,7 +257,7 @@ AS
 	BEGIN
 		RETURN (SELECT SUM(DATEDIFF(MONTH, fechaInicio, fechaFin))
 				FROM contratos 
-				WHERE coddnionie = @dni);
+				WHERE coddnionie = @dni)
 	END
 GO
 
@@ -320,14 +320,14 @@ GO
 -- 7. Hacer una función que nos devuelva por cada futbolista su nombre y en cuantos equipos a tenido contrato entre
 -- dos fechas determinadas.
 
-CREATE FUNCTION fnContratosFutbolistas(@fechaInicial DATE, @fechaFinal DATE)
+ALTER FUNCTION fnContratosFutbolistas(@fechaInicial DATE, @fechaFinal DATE)
 RETURNS @resultados TABLE (nombre VARCHAR(50), totalEquipos INT)
 AS
 	BEGIN
-		INSERT @resultados SELECT nombre, COUNT(*)
+		INSERT @resultados SELECT nombre, COUNT(DISTINCT contratos.codEquipo)
 							FROM fubtbolistas
 								INNER JOIN contratos ON fubtbolistas.coddnionie = contratos.coddnionie
-							WHERE fechaInicio > @fechaInicial AND fechaFin < @fechaFinal
+							WHERE fechaInicio >= @fechaInicial AND fechaFin <= @fechaFinal
 							GROUP BY nombre
 		RETURN
 	END
@@ -356,3 +356,53 @@ GO
 SELECT dbo.fnMejorPrecioAnual('Fútbol Club Barcelona', 2020)
 
 GO
+
+
+
+-- 9. Hacer un Trigger que en la tabla contratos al insertar o modificar el precio de recisión no permita que
+-- sea menor que el precio anual.
+
+CREATE TRIGGER tr_precioMenorAnual ON contratos FOR INSERT, UPDATE
+AS
+	IF (SELECT COUNT(*) FROM inserted WHERE preciorecision < precioanual) > 0
+		BEGIN
+			PRINT 'No se permiten precios de recisión menores al precio anual'
+			ROLLBACK
+		END
+GO
+
+-- Update no válido
+UPDATE contratos SET preciorecision = 1 WHERE codcontrato = 1
+GO
+
+
+-- 10. Hacer un Trigger que si en la tabla contratos que al insertar o modificar ponemos la fecha inicio
+-- posterior a la fecha fin que las intercambie. 
+
+CREATE TRIGGER tr_FechaInicioPosterior ON contratos FOR INSERT, UPDATE
+AS
+	UPDATE contratos SET fechaInicio = fechaFin, fechaFin = fechaInicio
+	WHERE fechaInicio > fechaFin AND codcontrato IN (SELECT codcontrato FROM inserted)
+
+GO
+
+-- Insert con las fechas mal puestas
+SELECT * FROM contratos
+INSERT contratos VALUES ('45678901D', 1, '2025-10-01', '2021-08-03', 77777, 99999)
+SELECT * FROM contratos
+GO
+
+
+
+-- 11. Hacer un Trigger que no permita eliminar ninguna liga.
+
+CREATE TRIGGER tr_ImpedirBorrarLiga ON ligas FOR DELETE
+AS
+	PRINT 'No está permitido borrar ligas'
+	ROLLBACK
+GO
+
+-- Intentamos borrar liga
+SELECT * FROM ligas 
+DELETE FROM ligas WHERE codLiga = 'SEGDM'
+SELECT * FROM ligas
