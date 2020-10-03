@@ -294,3 +294,72 @@ END;
 DELIMITER ;
 
 SELECT fnMejorPrecioAnual('Fútbol Club Barcelona', 2020);
+
+
+-- 9. Hacer un Trigger que en la tabla contratos al insertar o modificar el precio de recisión no permita que
+-- sea menor que el precio anual.
+
+DELIMITER //
+CREATE TRIGGER trI_precioMenorAnual BEFORE INSERT
+ON contratos FOR EACH ROW
+BEGIN
+	IF (SELECT COUNT(*) FROM contratos WHERE NEW.preciorecision < NEW.precioanual) > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se permiten precios de recisión menores al precio anual';
+    END IF;
+END;
+//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER trU_precioMenorAnual BEFORE UPDATE
+ON contratos FOR EACH ROW
+BEGIN
+	IF (SELECT COUNT(*) FROM contratos WHERE NEW.preciorecision < NEW.precioanual) > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se permiten precios de recisión menores al precio anual';
+    END IF;
+END;
+//
+DELIMITER ;
+
+UPDATE contratos SET preciorecision = 1 WHERE codcontrato = 1;
+
+
+-- 10. Hacer un Trigger que si en la tabla contratos que al insertar o modificar ponemos la fecha inicio
+-- posterior a la fecha fin que las intercambie. 
+
+DELIMITER //
+CREATE TRIGGER trI_FechaInicioPosterior
+BEFORE INSERT ON contratos
+FOR EACH ROW
+BEGIN
+	IF (NEW.fechaInicio > NEW.fechaFin) THEN    	
+        SET @auxiliar = NEW.fechaInicio;
+        SET NEW.fechaInicio = NEW.fechaFin;
+        SET NEW.fechaFin = @auxiliar;
+    END IF;
+END;
+//
+DELIMITER ;
+
+SELECT * FROM contratos;
+INSERT contratos VALUES (NULL, '45678901D', 1, '2025-10-01', '2021-08-03', 77777, 99999);
+SELECT * FROM contratos;
+
+
+-- 11. Hacer un Trigger que no permita eliminar ninguna liga.
+
+DELIMITER //
+CREATE TRIGGER tr_ImpedirBorrarLiga
+BEFORE DELETE
+ON ligas
+FOR EACH ROW
+BEGIN	
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No está permitido borrar ligas';
+END;
+//
+DELIMITER ;
+
+-- Intentamos borrar liga
+SELECT * FROM ligas;
+DELETE FROM ligas WHERE codLiga = 'SEGDM';
+SELECT * FROM ligas;
