@@ -303,7 +303,7 @@ DELIMITER //
 CREATE TRIGGER trI_precioMenorAnual BEFORE INSERT
 ON contratos FOR EACH ROW
 BEGIN
-	IF (SELECT COUNT(*) FROM contratos WHERE NEW.preciorecision < NEW.precioanual) > 0 THEN
+	IF (NEW.preciorecision < NEW.precioanual) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se permiten precios de recisión menores al precio anual';
     END IF;
 END;
@@ -314,7 +314,7 @@ DELIMITER //
 CREATE TRIGGER trU_precioMenorAnual BEFORE UPDATE
 ON contratos FOR EACH ROW
 BEGIN
-	IF (SELECT COUNT(*) FROM contratos WHERE NEW.preciorecision < NEW.precioanual) > 0 THEN
+	IF (NEW.preciorecision < NEW.precioanual) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se permiten precios de recisión menores al precio anual';
     END IF;
 END;
@@ -341,6 +341,20 @@ END;
 //
 DELIMITER ;
 
+DELIMITER //
+CREATE TRIGGER trU_FechaInicioPosterior
+BEFORE UPDATE ON contratos
+FOR EACH ROW
+BEGIN
+	IF (NEW.fechaInicio > NEW.fechaFin) THEN    	
+        SET @auxiliar = NEW.fechaInicio;
+        SET NEW.fechaInicio = NEW.fechaFin;
+        SET NEW.fechaFin = @auxiliar;
+    END IF;
+END;
+//
+DELIMITER ;
+
 SELECT * FROM contratos;
 INSERT contratos VALUES (NULL, '45678901D', 1, '2025-10-01', '2021-08-03', 77777, 99999);
 SELECT * FROM contratos;
@@ -353,7 +367,7 @@ CREATE TRIGGER tr_ImpedirBorrarLiga
 BEFORE DELETE
 ON ligas
 FOR EACH ROW
-BEGIN	
+BEGIN
 	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No está permitido borrar ligas';
 END;
 //
