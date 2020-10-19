@@ -100,9 +100,9 @@ DELIMITER //
 CREATE PROCEDURE listarContratoFutbolista(IN codigoFutbolista CHAR(9))
 BEGIN
 	IF (SELECT COUNT(*) FROM contratos WHERE coddnionie = codigoFutbolista) = 0 THEN
-		SELECT "No existe contratos para el jugador con el dni dado";
+		SELECT "No existen contratos para el jugador con el dni dado.";
 	ELSE
-    	SELECT codContrato, nomEquipo, nomLiga, fechaInicio, fechaFin, precioanual, preciorecision
+    	SELECT codContrato AS id, nomEquipo AS equipo, nomLiga AS liga, fechaInicio, fechaFin, precioanual, preciorecision
         FROM contratos INNER JOIN equipos ON contratos.codEquipo = equipos.codEquipo
         	INNER JOIN ligas ON equipos.codLiga = ligas.codLiga
         WHERE coddnionie = codigoFutbolista
@@ -170,7 +170,7 @@ BEGIN
 	IF (SELECT COUNT(*) FROM equipos WHERE codEquipo = pEquipo) = 0 THEN
 		SET oActivosEquipo = -1;
 		SET oActivosPrecioAnual = -1;
-		SELECT "No existe el equipo indicado";
+		SELECT "No existe el equipo indicado.";
 	ELSE
 		SELECT COUNT(*) INTO oActivosEquipo
 		FROM contratos
