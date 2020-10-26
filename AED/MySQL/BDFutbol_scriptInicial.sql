@@ -112,15 +112,6 @@ END;
 //
 DELIMITER ;
 
-SET @dnijugador = '45678901D';
-
--- Prueba con un jugador con contrato
-CALL listarContratoFutbolista(@dnijugador);
-
--- Prueba con un jugador sin contrato
-CALL listarContratoFutbolista('77777777Z');
-
-
 -- 2. Crear un procedimiento almacenado que inserte un equipo, de modo que se le pase como parámetros
 -- todos los datos. Comprobar que el código de liga pasado exista en la tabla ligas. En caso de que no
 -- exista la liga que no se inserte.
@@ -144,19 +135,6 @@ BEGIN
 END;
 //
 DELIMITER ;
-
--- Insertando un equipo nuevo
-CALL insertarEquipo('Nuevo equipo 1', 'SEGDM', 'Localidad de prueba', 1, @EExiste, @iRealizado);
-SELECT @eExiste AS `Existe Liga`, @iRealizado AS `Insert realizado`;
-
--- Insertando un equipo en una liga que no existe
-CALL insertarEquipo('Nuevo equipo 1', 'FALSA', 'Localidad de prueba', 1, @eExiste, @iRealizado);
-SELECT @eExiste AS `Existe Liga`, @iRealizado AS `Insert realizado`;
-
--- Insertando un equipo que ya existe
-CALL insertarEquipo('Nuevo equipo 1', 'SEGDM', 'Localidad de prueba', 1, @eExiste, @iRealizado);
-SELECT @eExiste AS `Existe Liga`, @iRealizado AS `Insert realizado`;
-
 
 -- 3. Crear un procedimiento almacenado que indicándole un equipo, precio anual y un precio recisión, devuelva
 -- dos parámetros. En un parámetro de salida la cantidad de futbolistas en activo (con contrato vigente) que hay
@@ -184,17 +162,6 @@ END;
 //
 DELIMITER ;
 
--- Prueba para equipo no existente
-
-CALL futbolistasActivos(77, 10000, 10000, @activos, @activosPrecio);
-SELECT @activos AS `Total de jugadores activos en el equipo`, @activosPrecio `Total de jugadores activos con criterio dado`;
-
--- Prueba para equipo existente
-
-CALL futbolistasActivos(7, 8230000, 9000000, @activos, @activosPrecio);
-SELECT @activos AS `Total de jugadores activos en el equipo`, @activosPrecio AS `Total de jugadores activos con criterio dado`;
-
-
 -- 4. Crear una función que dándole un dni o nie de un futbolista nos devuelva en número de meses total que ha estado en equipos.
 
 DELIMITER //
@@ -208,9 +175,6 @@ BEGIN
 END;
 //
 DELIMITER ;
-
-SELECT fnTotalMeses('23456789O') AS `Total meses`;
-
 
 -- 5. Hacer una función que devuelva los nombres de los equipos que pertenecen a una determinada liga que le pasamos el nombre
 -- por parámetro de entrada, si la liga no existe deberá aparecer liga no existe.
@@ -228,13 +192,6 @@ BEGIN
 END;
 //
 DELIMITER ;
-
--- Liga no existente
-CALL equiposLiga('Liga Falsa');
-
--- Liga existente
-CALL equiposLiga('Primera división masculina');
-
 
 -- 6. Hacer una función en la que visualicemos los datos de los jugadores extranjeros que pertenezcan a un equipo cuyo
 -- nombre pasamos por parámetro.
@@ -254,10 +211,6 @@ END;
 //
 DELIMITER ;
 
-CALL jugadoresExtranjeros('Real Madrid Club de Fútbol');
-
-
-
 -- 7. Hacer una función que nos devuelva por cada futbolista su nombre y en cuantos equipos a tenido contrato entre
 -- dos fechas determinadas.
 
@@ -274,9 +227,6 @@ END;
 //
 DELIMITER ;
 
-CALL contratosFutbolistas('2000/01/01', '2030/12/20');
-
-
 -- 8. Hacer una función escalar que nos devuelva el precioanual mas alto que se le ha pagado a un futbolista,
 -- con el nombre de equipo y año pasado por parámetro.
 
@@ -292,9 +242,6 @@ BEGIN
 END;
 //
 DELIMITER ;
-
-SELECT fnMejorPrecioAnual('Fútbol Club Barcelona', 2020);
-
 
 -- 9. Hacer un Trigger que en la tabla contratos al insertar o modificar el precio de recisión no permita que
 -- sea menor que el precio anual.
@@ -320,9 +267,6 @@ BEGIN
 END;
 //
 DELIMITER ;
-
-UPDATE contratos SET preciorecision = 1 WHERE codcontrato = 1;
-
 
 -- 10. Hacer un Trigger que si en la tabla contratos que al insertar o modificar ponemos la fecha inicio
 -- posterior a la fecha fin que las intercambie. 
@@ -355,11 +299,6 @@ END;
 //
 DELIMITER ;
 
-SELECT * FROM contratos;
-INSERT contratos VALUES (NULL, '45678901D', 1, '2025-10-01', '2021-08-03', 77777, 99999);
-SELECT * FROM contratos;
-
-
 -- 11. Hacer un Trigger que no permita eliminar ninguna liga.
 
 DELIMITER //
@@ -372,8 +311,3 @@ BEGIN
 END;
 //
 DELIMITER ;
-
--- Intentamos borrar liga
-SELECT * FROM ligas;
-DELETE FROM ligas WHERE codLiga = 'SEGDM';
-SELECT * FROM ligas;
